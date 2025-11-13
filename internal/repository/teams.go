@@ -22,7 +22,9 @@ func (r *teamRepositoryPG) UpsertTeam(ctx context.Context, team *domain.Team) er
 	if err != nil {
 		return fmt.Errorf("begin tx: %w", err)
 	}
-	defer tx.Rollback(ctx)
+	defer func() {
+		_ = tx.Rollback(ctx)
+	}()
 
 	var teamID int64
 

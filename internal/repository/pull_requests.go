@@ -23,7 +23,9 @@ func (r *pullRequestRepositoryPG) Create(ctx context.Context, pr *domain.PullReq
 	if err != nil {
 		return fmt.Errorf("begin tx: %w", err)
 	}
-	defer tx.Rollback(ctx)
+	defer func() {
+		_ = tx.Rollback(ctx)
+	}()
 
 	if pr.CreatedAt.IsZero() {
 		pr.CreatedAt = time.Now().UTC()
@@ -60,7 +62,9 @@ func (r *pullRequestRepositoryPG) Update(ctx context.Context, pr *domain.PullReq
 	if err != nil {
 		return fmt.Errorf("begin tx: %w", err)
 	}
-	defer tx.Rollback(ctx)
+	defer func() {
+		_ = tx.Rollback(ctx)
+	}()
 
 	cmd, err := tx.Exec(ctx, `
         UPDATE pull_requests
