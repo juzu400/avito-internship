@@ -17,7 +17,7 @@ const (
 	ErrCodeInternal                 = "INTERNAL_ERROR"
 )
 
-func errorCode(err error) string {
+func ErrorCode(err error) string {
 	switch {
 	case errors.Is(err, domain.ErrUserNotFound):
 		return ErrCodeUserNotFound

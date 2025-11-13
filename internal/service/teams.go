@@ -57,7 +57,7 @@ func (s *TeamsService) UpsertTeam(ctx context.Context, team *domain.Team) error 
 	if err != nil {
 		s.log.Error("UpsertTeam failed",
 			slog.String("team_name", team.Name),
-			slog.String("error_code", errorCode(err)),
+			slog.String("error_code", ErrorCode(err)),
 			slog.Any("err", err),
 		)
 	}
@@ -80,7 +80,7 @@ func (s *TeamsService) GetByName(ctx context.Context, name string) (*domain.Team
 	if err != nil {
 		s.log.Error("GetByName failed",
 			slog.String("team_name", name),
-			slog.String("error_code", errorCode(err)),
+			slog.String("error_code", ErrorCode(err)),
 			slog.Any("err", err),
 		)
 		return nil, err
@@ -104,7 +104,7 @@ func (s *TeamsService) GetByMemberID(ctx context.Context, userID domain.UserID) 
 	if err != nil {
 		s.log.Error("GetByMemberID failed",
 			slog.String("user_id", string(userID)),
-			slog.String("error_code", errorCode(err)),
+			slog.String("error_code", ErrorCode(err)),
 			slog.Any("err", err),
 		)
 		return nil, err

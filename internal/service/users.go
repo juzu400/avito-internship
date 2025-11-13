@@ -27,7 +27,7 @@ func (s *UsersService) SetIsActive(ctx context.Context, id domain.UserID, active
 	if err != nil {
 		s.log.Error("SetIsActive failed",
 			slog.String("user_id", string(id)),
-			slog.String("error_code", errorCode(err)),
+			slog.String("error_code", ErrorCode(err)),
 			slog.Any("err", err),
 		)
 	}
@@ -50,7 +50,7 @@ func (s *UsersService) GetReviews(ctx context.Context, id domain.UserID) ([]*dom
 	if err != nil {
 		s.log.Error("GetReviews failed",
 			slog.String("user_id", string(id)),
-			slog.String("error_code", errorCode(err)),
+			slog.String("error_code", ErrorCode(err)),
 			slog.Any("err", err),
 		)
 		return nil, err

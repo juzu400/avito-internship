@@ -19,7 +19,7 @@ lint:
 	golangci-lint run ./...
 
 docker-up:
-	docker-compose up --build
+	docker compose up --build
 
 docker-down:
-	docker-compose down -v
+	docker compose down -v

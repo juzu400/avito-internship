@@ -37,7 +37,7 @@ func (s *PullRequestService) Create(
 		s.log.Error("get team for author failed",
 			slog.String("pull_request_id", string(id)),
 			slog.String("author_id", string(authorID)),
-			slog.String("error_code", errorCode(err)),
+			slog.String("error_code", ErrorCode(err)),
 			slog.Any("err", err),
 		)
 		return nil, err
@@ -57,7 +57,7 @@ func (s *PullRequestService) Create(
 	if err := s.prs.Create(ctx, pr); err != nil {
 		s.log.Error("Create pull request failed",
 			slog.String("pull_request_id", string(id)),
-			slog.String("error_code", errorCode(err)),
+			slog.String("error_code", ErrorCode(err)),
 			slog.Any("err", err),
 		)
 		return nil, err
@@ -85,7 +85,7 @@ func (s *PullRequestService) Merge(
 	if err != nil {
 		s.log.Error("GetByID in Merge failed",
 			slog.String("pull_request_id", string(id)),
-			slog.String("error_code", errorCode(err)),
+			slog.String("error_code", ErrorCode(err)),
 			slog.Any("err", err),
 		)
 		return nil, err
@@ -106,7 +106,7 @@ func (s *PullRequestService) Merge(
 	if err := s.prs.Update(ctx, pr); err != nil {
 		s.log.Error("Update in Merge failed",
 			slog.String("pull_request_id", string(id)),
-			slog.String("error_code", errorCode(err)),
+			slog.String("error_code", ErrorCode(err)),
 			slog.Any("err", err),
 		)
 		return nil, err
@@ -138,7 +138,7 @@ func (s *PullRequestService) ReassignReviewer(
 	if err != nil {
 		s.log.Error("GetByID in ReassignReviewer failed",
 			slog.String("pull_request_id", string(prID)),
-			slog.String("error_code", errorCode(err)),
+			slog.String("error_code", ErrorCode(err)),
 			slog.Any("err", err),
 		)
 		return nil, nil, err
@@ -175,7 +175,7 @@ func (s *PullRequestService) ReassignReviewer(
 		s.log.Error("GetByMemberID in ReassignReviewer failed",
 			slog.String("pull_request_id", string(prID)),
 			slog.String("old_reviewer_id", string(oldReviewerID)),
-			slog.String("error_code", errorCode(err)),
+			slog.String("error_code", ErrorCode(err)),
 			slog.Any("err", err),
 		)
 		return nil, nil, err
@@ -214,7 +214,7 @@ func (s *PullRequestService) ReassignReviewer(
 	if err := s.prs.Update(ctx, pr); err != nil {
 		s.log.Error("Update in ReassignReviewer failed",
 			slog.String("pull_request_id", string(prID)),
-			slog.String("error_code", errorCode(err)),
+			slog.String("error_code", ErrorCode(err)),
 			slog.Any("err", err),
 		)
 		return nil, nil, err
