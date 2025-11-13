@@ -23,7 +23,6 @@ func Apply(ctx context.Context, log *slog.Logger, pool *pgxpool.Pool, dir string
 		return fmt.Errorf("read migrations dir: %w", err)
 	}
 
-	// сортируем по имени: 001_, 002_ ...
 	sort.Slice(entries, func(i, j int) bool {
 		return entries[i].Name() < entries[j].Name()
 	})
