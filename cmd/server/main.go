@@ -40,7 +40,8 @@ func main() {
 	}
 	log.Info("migrations applied")
 
-	services := service.NewServices(log)
+	repos := repository.NewRepositories(db)
+	services := service.NewServices(log, repos)
 	router := httptransport.NewRouter(log, services)
 
 	srv := &http.Server{
