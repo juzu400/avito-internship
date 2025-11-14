@@ -11,6 +11,12 @@ import (
 )
 
 func (h *Handler) SetUserActive(w http.ResponseWriter, r *http.Request) {
+	if h.adminToken != "" {
+		if r.Header.Get("X-Admin-Token") != h.adminToken {
+			writeError(w, http.StatusUnauthorized, service.ErrCodeNotFound, "resource not found")
+			return
+		}
+	}
 	var req SetUserActiveRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		h.log.Warn("SetUserActive: invalid json", slog.Any("err", err))

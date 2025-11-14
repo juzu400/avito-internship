@@ -2,10 +2,13 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
+	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 
 	"github.com/juzu400/avito-internship/internal/domain"
 )
@@ -43,6 +46,10 @@ func (r *pullRequestRepositoryPG) Create(ctx context.Context, pr *domain.PullReq
 		pr.MergedAt,
 	)
 	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == pgerrcode.UniqueViolation {
+			return domain.ErrPullRequestAlreadyExists
+		}
 		return fmt.Errorf("insert pull_request: %w", err)
 	}
 
@@ -116,7 +123,10 @@ func (r *pullRequestRepositoryPG) GetByID(ctx context.Context, id domain.PullReq
 	var status string
 	var mergedAt *time.Time
 	if err := row.Scan(&pr.ID, &pr.Name, &pr.AuthorID, &status, &pr.CreatedAt, &mergedAt); err != nil {
-		return nil, domain.ErrPullRequestNotFound
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, domain.ErrPullRequestNotFound
+		}
+		return nil, fmt.Errorf("get pull_request by id %s: %w", id, err)
 	}
 	pr.Status = domain.PullRequestStatus(status)
 	pr.MergedAt = mergedAt

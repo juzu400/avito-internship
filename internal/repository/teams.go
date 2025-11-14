@@ -2,9 +2,12 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
+	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 
 	"github.com/juzu400/avito-internship/internal/domain"
 )
@@ -31,11 +34,14 @@ func (r *teamRepositoryPG) UpsertTeam(ctx context.Context, team *domain.Team) er
 	err = tx.QueryRow(ctx, `
         INSERT INTO teams (team_name)
         VALUES ($1)
-        ON CONFLICT (team_name) DO UPDATE SET team_name = EXCLUDED.team_name
         RETURNING id
     `, team.Name).Scan(&teamID)
 	if err != nil {
-		return fmt.Errorf("upsert team: %w", err)
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == pgerrcode.UniqueViolation {
+			return domain.ErrTeamAlreadyExists
+		}
+		return fmt.Errorf("insert team: %w", err)
 	}
 
 	for _, m := range team.Members {

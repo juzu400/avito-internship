@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 
@@ -40,6 +41,22 @@ func (s *UsersService) GetReviews(ctx context.Context, id domain.UserID) ([]*dom
 		s.log.Warn("validate GetReviews failed",
 			slog.String("error_code", ErrCodeValidation),
 			slog.String("reason", "empty user_id"),
+		)
+		return nil, err
+	}
+
+	if _, err := s.users.GetByID(ctx, id); err != nil {
+		if errors.Is(err, domain.ErrUserNotFound) {
+			s.log.Warn("GetReviews: user not found",
+				slog.String("user_id", string(id)),
+				slog.String("error_code", ErrorCode(err)),
+			)
+			return nil, err
+		}
+		s.log.Error("GetByID in GetReviews failed",
+			slog.String("user_id", string(id)),
+			slog.String("error_code", ErrorCode(err)),
+			slog.Any("err", err),
 		)
 		return nil, err
 	}

@@ -68,7 +68,6 @@ func (h *Handler) ReassignReviewer(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, service.ErrCodeValidation, "invalid json")
 		return
 	}
-
 	pr, newReviewer, err := h.services.PullRequests.ReassignReviewer(
 		r.Context(),
 		domain.PullRequestID(req.PullRequestID),

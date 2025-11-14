@@ -189,6 +189,9 @@ func (s *PullRequestService) ReassignReviewer(
 		if m.ID == oldReviewerID {
 			continue
 		}
+		if m.ID == pr.AuthorID {
+			continue
+		}
 		if containsUserID(pr.AssignedReviewers, m.ID) {
 			continue
 		}

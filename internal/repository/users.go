@@ -2,8 +2,10 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/juzu400/avito-internship/internal/domain"
 )
 
@@ -24,6 +26,9 @@ func (r *userRepositoryPG) GetByID(ctx context.Context, id domain.UserID) (*doma
 
 	var u domain.User
 	if err := row.Scan(&u.ID, &u.Username, &u.IsActive); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, domain.ErrUserNotFound
+		}
 		return nil, fmt.Errorf("get user by id %s: %w", id, err)
 	}
 

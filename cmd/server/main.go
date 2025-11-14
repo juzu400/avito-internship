@@ -33,16 +33,16 @@ func main() {
 	defer db.Close()
 	log.Info("db connected")
 
-	// Миграции
 	if err := migrations.Apply(ctx, log, db.Pool, "migrations"); err != nil {
 		log.Error("failed to apply migrations", slog.Any("err", err))
 		os.Exit(1)
 	}
 	log.Info("migrations applied")
 
+	adminToken := os.Getenv("ADMIN_TOKEN")
 	repos := repository.NewRepositories(db)
 	services := service.NewServices(log, repos)
-	router := httptransport.NewRouter(log, services)
+	router := httptransport.NewRouter(log, services, adminToken)
 
 	srv := &http.Server{
 		Addr:    cfg.HTTPAddr,

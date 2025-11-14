@@ -40,14 +40,6 @@ func (h *Handler) AddTeam(w http.ResponseWriter, r *http.Request) {
 		TeamName: team.Name,
 		Members:  make([]TeamMemberDTO, 0, len(team.Members)),
 	}
-	for _, m := range team.Members {
-		resp.Members = append(resp.Members, TeamMemberDTO{
-			UserID:   string(m.ID),
-			Username: m.Username,
-			IsActive: m.IsActive,
-		})
-	}
-
 	writeJSON(w, http.StatusCreated, resp)
 }
 
