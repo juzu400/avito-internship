@@ -18,22 +18,22 @@ func (h *Handler) SetUserActive(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := h.services.Users.SetIsActive(r.Context(), domain.UserID(req.UserID), req.IsActive)
-	if err != nil {
+	if err := h.services.Users.SetIsActive(r.Context(), domain.UserID(req.UserID), req.IsActive); err != nil {
 		status, code := mapErrorToHTTP(err)
-		h.log.Error("SetUserActive failed",
-			slog.String("user_id", req.UserID),
-			slog.String("error_code", code),
-			slog.Any("err", err),
-		)
 		writeError(w, status, code, err.Error())
 		return
 	}
 
-	writeJSON(w, http.StatusOK, map[string]any{
-		"user_id":   req.UserID,
-		"is_active": req.IsActive,
-	})
+	resp := UserResponse{
+		User: UserDTO{
+			UserID:   req.UserID,
+			Username: "",
+			TeamName: "",
+			IsActive: req.IsActive,
+		},
+	}
+
+	writeJSON(w, http.StatusOK, resp)
 }
 
 func (h *Handler) GetUserReview(w http.ResponseWriter, r *http.Request) {
@@ -46,11 +46,6 @@ func (h *Handler) GetUserReview(w http.ResponseWriter, r *http.Request) {
 	prs, err := h.services.Users.GetReviews(r.Context(), domain.UserID(userID))
 	if err != nil {
 		status, code := mapErrorToHTTP(err)
-		h.log.Error("GetUserReview failed",
-			slog.String("user_id", userID),
-			slog.String("error_code", code),
-			slog.Any("err", err),
-		)
 		writeError(w, status, code, err.Error())
 		return
 	}

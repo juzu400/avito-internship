@@ -2,9 +2,13 @@ package http
 
 import "time"
 
+type ErrorBody struct {
+	Code    string `json:"code"`
+	Message string `json:"message"`
+}
+
 type ErrorResponse struct {
-	ErrorCode string `json:"error_code"`
-	Message   string `json:"message"`
+	Error ErrorBody `json:"error"`
 }
 
 type TeamMemberDTO struct {
@@ -18,9 +22,24 @@ type TeamDTO struct {
 	Members  []TeamMemberDTO `json:"members"`
 }
 
+type TeamAddResponse struct {
+	Team TeamDTO `json:"team"`
+}
+
 type SetUserActiveRequest struct {
 	UserID   string `json:"user_id"`
 	IsActive bool   `json:"is_active"`
+}
+
+type UserDTO struct {
+	UserID   string `json:"user_id"`
+	Username string `json:"username"`
+	TeamName string `json:"team_name"`
+	IsActive bool   `json:"is_active"`
+}
+
+type UserResponse struct {
+	User UserDTO `json:"user"`
 }
 
 type PullRequestShortDTO struct {
@@ -60,7 +79,11 @@ type PullRequestDTO struct {
 	MergedAt          *time.Time `json:"mergedAt"`
 }
 
+type PullRequestResponse struct {
+	PR PullRequestDTO `json:"pr"`
+}
+
 type ReassignReviewerResponse struct {
-	PullRequest PullRequestDTO `json:"pull_request"`
-	ReplacedBy  TeamMemberDTO  `json:"replaced_by"`
+	PR         PullRequestDTO `json:"pr"`
+	ReplacedBy string         `json:"replaced_by"` // user_id нового ревьювера
 }

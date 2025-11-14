@@ -19,9 +19,9 @@ func (h *Handler) AddTeam(w http.ResponseWriter, r *http.Request) {
 	}
 
 	team := &domain.Team{
-		Name: req.TeamName,
+		Name:    req.TeamName,
+		Members: make([]domain.User, 0, len(req.Members)),
 	}
-
 	for _, m := range req.Members {
 		team.Members = append(team.Members, domain.User{
 			ID:       domain.UserID(m.UserID),
@@ -32,16 +32,23 @@ func (h *Handler) AddTeam(w http.ResponseWriter, r *http.Request) {
 
 	if err := h.services.Teams.UpsertTeam(r.Context(), team); err != nil {
 		status, code := mapErrorToHTTP(err)
-		h.log.Error("AddTeam failed",
-			slog.String("team_name", req.TeamName),
-			slog.String("error_code", code),
-			slog.Any("err", err),
-		)
 		writeError(w, status, code, err.Error())
 		return
 	}
 
-	writeJSON(w, http.StatusOK, req)
+	resp := TeamDTO{
+		TeamName: team.Name,
+		Members:  make([]TeamMemberDTO, 0, len(team.Members)),
+	}
+	for _, m := range team.Members {
+		resp.Members = append(resp.Members, TeamMemberDTO{
+			UserID:   string(m.ID),
+			Username: m.Username,
+			IsActive: m.IsActive,
+		})
+	}
+
+	writeJSON(w, http.StatusCreated, resp)
 }
 
 func (h *Handler) GetTeam(w http.ResponseWriter, r *http.Request) {
@@ -54,11 +61,6 @@ func (h *Handler) GetTeam(w http.ResponseWriter, r *http.Request) {
 	team, err := h.services.Teams.GetByName(r.Context(), teamName)
 	if err != nil {
 		status, code := mapErrorToHTTP(err)
-		h.log.Error("GetTeam failed",
-			slog.String("team_name", teamName),
-			slog.String("error_code", code),
-			slog.Any("err", err),
-		)
 		writeError(w, status, code, err.Error())
 		return
 	}

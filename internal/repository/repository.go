@@ -1,5 +1,7 @@
 package repository
 
+//go:generate mockgen -source=repository.go -destination=mocks/repository_mocks.go -package=mocks
+
 import (
 	"context"
 

@@ -16,15 +16,16 @@ func mapErrorToHTTP(err error) (status int, code string) {
 	switch code {
 	case service.ErrCodeValidation:
 		return http.StatusBadRequest, code
-	case service.ErrCodeUserNotFound,
-		service.ErrCodeTeamNotFound,
-		service.ErrCodePullRequestNotFound:
+	case service.ErrCodeNotFound:
 		return http.StatusNotFound, code
-	case service.ErrCodePullRequestAlreadyMerged,
+	case service.ErrCodeTeamAlreadyExists:
+		return http.StatusBadRequest, code
+	case service.ErrCodePullRequestAlreadyExists,
+		service.ErrCodePullRequestAlreadyMerged,
 		service.ErrCodeReviewerNotAssigned,
 		service.ErrCodeNoReviewerCandidates:
 		return http.StatusConflict, code
 	default:
-		return http.StatusInternalServerError, code
+		return http.StatusInternalServerError, service.ErrCodeInternal
 	}
 }

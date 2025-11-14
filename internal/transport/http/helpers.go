@@ -12,8 +12,12 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 }
 
 func writeError(w http.ResponseWriter, status int, code, message string) {
-	writeJSON(w, status, ErrorResponse{
-		ErrorCode: code,
-		Message:   message,
-	})
+	resp := ErrorResponse{
+		Error: ErrorBody{
+			Code:    code,
+			Message: message,
+		},
+	}
+
+	writeJSON(w, status, resp)
 }

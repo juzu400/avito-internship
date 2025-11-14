@@ -36,8 +36,9 @@ func (h *Handler) CreatePullRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := toPullRequestDTO(pr)
-	writeJSON(w, http.StatusOK, resp)
+	prDTO := toPullRequestDTO(pr)
+	resp := PullRequestResponse{PR: prDTO}
+	writeJSON(w, http.StatusCreated, resp)
 }
 
 func (h *Handler) MergePullRequest(w http.ResponseWriter, r *http.Request) {
@@ -51,16 +52,12 @@ func (h *Handler) MergePullRequest(w http.ResponseWriter, r *http.Request) {
 	pr, err := h.services.PullRequests.Merge(r.Context(), domain.PullRequestID(req.PullRequestID))
 	if err != nil {
 		status, code := mapErrorToHTTP(err)
-		h.log.Error("MergePullRequest failed",
-			slog.String("pull_request_id", req.PullRequestID),
-			slog.String("error_code", code),
-			slog.Any("err", err),
-		)
 		writeError(w, status, code, err.Error())
 		return
 	}
 
-	resp := toPullRequestDTO(pr)
+	prDTO := toPullRequestDTO(pr)
+	resp := PullRequestResponse{PR: prDTO}
 	writeJSON(w, http.StatusOK, resp)
 }
 
@@ -90,14 +87,9 @@ func (h *Handler) ReassignReviewer(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := ReassignReviewerResponse{
-		PullRequest: toPullRequestDTO(pr),
-		ReplacedBy: TeamMemberDTO{
-			UserID:   string(newReviewer.ID),
-			Username: newReviewer.Username,
-			IsActive: newReviewer.IsActive,
-		},
+		PR:         toPullRequestDTO(pr),
+		ReplacedBy: string(newReviewer.ID),
 	}
-
 	writeJSON(w, http.StatusOK, resp)
 }
 

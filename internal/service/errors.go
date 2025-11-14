@@ -8,29 +8,31 @@ import (
 
 const (
 	ErrCodeValidation               = "VALIDATION_ERROR"
-	ErrCodeUserNotFound             = "USER_NOT_FOUND"
-	ErrCodeTeamNotFound             = "TEAM_NOT_FOUND"
-	ErrCodePullRequestNotFound      = "PULL_REQUEST_NOT_FOUND"
-	ErrCodePullRequestAlreadyMerged = "PULL_REQUEST_ALREADY_MERGED"
-	ErrCodeReviewerNotAssigned      = "REVIEWER_NOT_ASSIGNED"
-	ErrCodeNoReviewerCandidates     = "NO_CANDIDATE" // как в openapi
 	ErrCodeInternal                 = "INTERNAL_ERROR"
+	ErrCodeNotFound                 = "NOT_FOUND"
+	ErrCodeTeamAlreadyExists        = "TEAM_EXISTS"
+	ErrCodePullRequestAlreadyExists = "PR_EXISTS"
+	ErrCodePullRequestAlreadyMerged = "PR_MERGED"
+	ErrCodeReviewerNotAssigned      = "NOT_ASSIGNED"
+	ErrCodeNoReviewerCandidates     = "NO_CANDIDATE"
 )
 
 func ErrorCode(err error) string {
 	switch {
-	case errors.Is(err, domain.ErrUserNotFound):
-		return ErrCodeUserNotFound
-	case errors.Is(err, domain.ErrTeamNotFound):
-		return ErrCodeTeamNotFound
-	case errors.Is(err, domain.ErrPullRequestNotFound):
-		return ErrCodePullRequestNotFound
+	case errors.Is(err, domain.ErrUserNotFound),
+		errors.Is(err, domain.ErrTeamNotFound),
+		errors.Is(err, domain.ErrPullRequestNotFound):
+		return ErrCodeNotFound
 	case errors.Is(err, domain.ErrPullRequestAlreadyMerged):
 		return ErrCodePullRequestAlreadyMerged
 	case errors.Is(err, domain.ErrReviewerNotAssigned):
 		return ErrCodeReviewerNotAssigned
 	case errors.Is(err, domain.ErrNoReviewerCandidates):
 		return ErrCodeNoReviewerCandidates
+	case errors.Is(err, domain.ErrPullRequestAlreadyExists):
+		return ErrCodePullRequestAlreadyExists
+	case errors.Is(err, domain.ErrTeamAlreadyExists):
+		return ErrCodeTeamAlreadyExists
 	case errors.Is(err, domain.ErrValidation):
 		return ErrCodeValidation
 	default:
