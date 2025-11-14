@@ -66,7 +66,7 @@ type MergePullRequestRequest struct {
 
 type ReassignReviewerRequest struct {
 	PullRequestID string `json:"pull_request_id"`
-	OldUserID     string `json:"old_reviewer_id"`
+	OldUserID     string `json:"old_user_id"`
 }
 
 type PullRequestDTO struct {
@@ -85,5 +85,5 @@ type PullRequestResponse struct {
 
 type ReassignReviewerResponse struct {
 	PR         PullRequestDTO `json:"pr"`
-	ReplacedBy string         `json:"replaced_by"` // user_id нового ревьювера
+	ReplacedBy string         `json:"replaced_by"`
 }

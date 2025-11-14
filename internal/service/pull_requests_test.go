@@ -526,9 +526,9 @@ func TestPullRequestService_ReassignReviewer_NoCandidates(t *testing.T) {
 	team := &domain.Team{
 		Name: "backend",
 		Members: []domain.User{
-			{ID: "u1", Username: "U1", IsActive: true},  // старый ревьюер
-			{ID: "u2", Username: "U2", IsActive: true},  // уже ревьюер
-			{ID: "u3", Username: "U3", IsActive: false}, // неактивный
+			{ID: "u1", Username: "U1", IsActive: true},
+			{ID: "u2", Username: "U2", IsActive: true},
+			{ID: "u3", Username: "U3", IsActive: false},
 		},
 	}
 
@@ -586,5 +586,86 @@ func TestPullRequestService_Create_PrAlreadyExists(t *testing.T) {
 	_, err := svc.Create(context.Background(), "pr-1", "Test PR", authorID)
 	if !errors.Is(err, domain.ErrPullRequestAlreadyExists) {
 		t.Fatalf("expected ErrPullRequestAlreadyExists, got %v", err)
+	}
+}
+
+func TestPullRequestService_ReassignReviewer_Success(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	prRepo := mocks.NewMockPullRequestRepository(ctrl)
+	teamRepo := mocks.NewMockTeamRepository(ctrl)
+
+	prID := domain.PullRequestID("pr-1")
+	oldID := domain.UserID("u1")
+	authorID := domain.UserID("author")
+	newReviewerID := domain.UserID("u2")
+
+	now := time.Now().UTC()
+
+	pr := &domain.PullRequest{
+		ID:                prID,
+		Name:              "Test PR",
+		AuthorID:          authorID,
+		Status:            domain.PRStatusOpen,
+		AssignedReviewers: []domain.UserID{oldID},
+		CreatedAt:         now,
+	}
+
+	team := &domain.Team{
+		Name: "backend",
+		Members: []domain.User{
+			{ID: authorID, Username: "Author", IsActive: true},
+			{ID: oldID, Username: "Old", IsActive: true},
+			{ID: newReviewerID, Username: "New", IsActive: true},
+		},
+	}
+	prRepo.EXPECT().
+		GetByID(gomock.Any(), prID).
+		Return(pr, nil)
+
+	teamRepo.EXPECT().
+		GetByMemberID(gomock.Any(), oldID).
+		Return(team, nil)
+
+	prRepo.EXPECT().
+		Update(gomock.Any(), gomock.AssignableToTypeOf(&domain.PullRequest{})).
+		DoAndReturn(func(_ context.Context, updated *domain.PullRequest) error {
+			if len(updated.AssignedReviewers) != 1 {
+				t.Fatalf("expected 1 reviewer, got %d", len(updated.AssignedReviewers))
+			}
+			if updated.AssignedReviewers[0] != newReviewerID {
+				t.Fatalf("expected reviewer %q, got %q", newReviewerID, updated.AssignedReviewers[0])
+			}
+			if updated.AuthorID != authorID {
+				t.Fatalf("expected author %q, got %q", authorID, updated.AuthorID)
+			}
+			return nil
+		})
+
+	svc := &PullRequestService{
+		log:   newTestLogger(),
+		users: mocks.NewMockUserRepository(ctrl),
+		teams: teamRepo,
+		prs:   prRepo,
+	}
+
+	gotPR, gotUser, err := svc.ReassignReviewer(context.Background(), prID, oldID)
+	if err != nil {
+		t.Fatalf("expected nil error, got %v", err)
+	}
+
+	if gotUser == nil {
+		t.Fatal("expected non-nil new reviewer, got nil")
+	}
+	if gotUser.ID != newReviewerID {
+		t.Fatalf("expected new reviewer %q, got %q", newReviewerID, gotUser.ID)
+	}
+
+	if gotPR != pr {
+		t.Fatalf("expected returned PR pointer %p, got %p", pr, gotPR)
+	}
+	if len(gotPR.AssignedReviewers) != 1 || gotPR.AssignedReviewers[0] != newReviewerID {
+		t.Fatalf("expected reviewers [%q], got %v", newReviewerID, gotPR.AssignedReviewers)
 	}
 }

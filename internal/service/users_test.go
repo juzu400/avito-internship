@@ -98,18 +98,27 @@ func TestUsersService_GetReviews_Success(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	svc, _, prRepo := newTestUsersService(ctrl)
+	svc, userRepo, prRepo := newTestUsersService(ctrl)
 
 	userID := domain.UserID("u1")
 
-	// Нам не важна структура PR, только то, что слайс пробрасывается как есть
 	pr1 := &domain.PullRequest{}
 	pr2 := &domain.PullRequest{}
 	expected := []*domain.PullRequest{pr1, pr2}
 
-	prRepo.EXPECT().
-		ListByReviewer(gomock.Any(), userID).
-		Return(expected, nil)
+	gomock.InOrder(
+		userRepo.EXPECT().
+			GetByID(gomock.Any(), userID).
+			Return(&domain.User{
+				ID:       userID,
+				Username: "user-1",
+				IsActive: true,
+			}, nil),
+
+		prRepo.EXPECT().
+			ListByReviewer(gomock.Any(), userID).
+			Return(expected, nil),
+	)
 
 	got, err := svc.GetReviews(context.Background(), userID)
 	if err != nil {
@@ -129,14 +138,24 @@ func TestUsersService_GetReviews_RepoErrorPropagated(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	svc, _, prRepo := newTestUsersService(ctrl)
+	svc, userRepo, prRepo := newTestUsersService(ctrl)
 
 	userID := domain.UserID("u1")
 	repoErr := errors.New("db error")
 
-	prRepo.EXPECT().
-		ListByReviewer(gomock.Any(), userID).
-		Return(nil, repoErr)
+	gomock.InOrder(
+		userRepo.EXPECT().
+			GetByID(gomock.Any(), userID).
+			Return(&domain.User{
+				ID:       userID,
+				Username: "user-1",
+				IsActive: true,
+			}, nil),
+
+		prRepo.EXPECT().
+			ListByReviewer(gomock.Any(), userID).
+			Return(nil, repoErr),
+	)
 
 	got, err := svc.GetReviews(context.Background(), userID)
 	if got != nil {
@@ -144,5 +163,30 @@ func TestUsersService_GetReviews_RepoErrorPropagated(t *testing.T) {
 	}
 	if !errors.Is(err, repoErr) {
 		t.Fatalf("expected %v, got %v", repoErr, err)
+	}
+}
+
+func TestUsersService_GetReviews_UserNotFound(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	svc, userRepo, prRepo := newTestUsersService(ctrl)
+
+	userID := domain.UserID("u-missing")
+
+	userRepo.EXPECT().
+		GetByID(gomock.Any(), userID).
+		Return(nil, domain.ErrUserNotFound)
+
+	prRepo.EXPECT().
+		ListByReviewer(gomock.Any(), gomock.Any()).
+		Times(0)
+
+	prs, err := svc.GetReviews(context.Background(), userID)
+	if prs != nil {
+		t.Fatalf("expected nil prs, got %#v", prs)
+	}
+	if !errors.Is(err, domain.ErrUserNotFound) {
+		t.Fatalf("expected ErrUserNotFound, got %v", err)
 	}
 }
