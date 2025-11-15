@@ -199,6 +199,36 @@ func (mr *MockPullRequestRepositoryMockRecorder) GetByID(ctx, id interface{}) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByID", reflect.TypeOf((*MockPullRequestRepository)(nil).GetByID), ctx, id)
 }
 
+// GetPullRequestReviewerStats mocks base method.
+func (m *MockPullRequestRepository) GetPullRequestReviewerStats(ctx context.Context) ([]domain.PullRequestReviewersStat, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPullRequestReviewerStats", ctx)
+	ret0, _ := ret[0].([]domain.PullRequestReviewersStat)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPullRequestReviewerStats indicates an expected call of GetPullRequestReviewerStats.
+func (mr *MockPullRequestRepositoryMockRecorder) GetPullRequestReviewerStats(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPullRequestReviewerStats", reflect.TypeOf((*MockPullRequestRepository)(nil).GetPullRequestReviewerStats), ctx)
+}
+
+// GetReviewerAssignmentStats mocks base method.
+func (m *MockPullRequestRepository) GetReviewerAssignmentStats(ctx context.Context) ([]domain.ReviewerAssignmentStat, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetReviewerAssignmentStats", ctx)
+	ret0, _ := ret[0].([]domain.ReviewerAssignmentStat)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetReviewerAssignmentStats indicates an expected call of GetReviewerAssignmentStats.
+func (mr *MockPullRequestRepositoryMockRecorder) GetReviewerAssignmentStats(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetReviewerAssignmentStats", reflect.TypeOf((*MockPullRequestRepository)(nil).GetReviewerAssignmentStats), ctx)
+}
+
 // ListByReviewer mocks base method.
 func (m *MockPullRequestRepository) ListByReviewer(ctx context.Context, reviewerID domain.UserID) ([]*domain.PullRequest, error) {
 	m.ctrl.T.Helper()

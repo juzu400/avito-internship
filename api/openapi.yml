@@ -428,3 +428,84 @@ paths:
                     pull_request_name: Add search
                     author_id: u1
                     status: OPEN
+  /users/stats:
+    get:
+      tags: [Users]
+      summary: Статистика назначений ревьюеров по всем PR
+      description: >
+        Возвращает для каждого пользователя количество назначений его ревьюером
+        во всех pull request'ах.
+      responses:
+        '200':
+          description: Статистика назначений ревьюеров
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      required: [reviewer_id, assignments]
+                      properties:
+                        reviewer_id:
+                          type: string
+                          description: Идентификатор пользователя-ревьюера
+                        assignments:
+                          type: integer
+                          format: int32
+                          description: Общее количество назначений ревьюером
+              example:
+                items:
+                  - reviewer_id: u1
+                    assignments: 3
+                  - reviewer_id: u2
+                    assignments: 1
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /pullRequests/stats:
+    get:
+      tags: [PullRequests]
+      summary: Статистика по pull request'ам — количество ревьюеров
+      description: >
+        Возвращает список pull request'ов и количество назначенных на них ревьюеров.
+      responses:
+        '200':
+          description: Статистика по pull request'ам
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      required: [pull_request_id, reviewers]
+                      properties:
+                        pull_request_id:
+                          type: string
+                          description: Идентификатор pull request'а
+                        reviewers:
+                          type: integer
+                          format: int32
+                          description: Количество ревьюеров у данного PR
+              example:
+                items:
+                  - pull_request_id: pr-1
+                    reviewers: 2
+                  - pull_request_id: pr-2
+                    reviewers: 3
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'

@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/juzu400/avito-internship/internal/domain"
 	"github.com/juzu400/avito-internship/internal/repository"
 	"github.com/juzu400/avito-internship/internal/repository/mocks"
 	"github.com/juzu400/avito-internship/internal/service"
@@ -19,9 +20,14 @@ func TestRouter_AllRoutesRegistered(t *testing.T) {
 	userRepo := mocks.NewMockUserRepository(ctrl)
 	teamRepo := mocks.NewMockTeamRepository(ctrl)
 	prRepo := mocks.NewMockPullRequestRepository(ctrl)
-	repos := &repository.Repositories{Users: userRepo, Teams: teamRepo, PullRequests: prRepo}
-	services := service.NewServices(log, repos)
 
+	repos := &repository.Repositories{
+		Users:        userRepo,
+		Teams:        teamRepo,
+		PullRequests: prRepo,
+	}
+
+	services := service.NewServices(log, repos)
 	r := NewRouter(log, services)
 
 	tests := []struct {
@@ -29,6 +35,7 @@ func TestRouter_AllRoutesRegistered(t *testing.T) {
 		path   string
 	}{
 		{"GET", "/health"},
+		{"GET", "/users/stats"},
 		{"POST", "/team/add"},
 		{"GET", "/team/get"},
 		{"POST", "/users/setIsActive"},
@@ -36,10 +43,23 @@ func TestRouter_AllRoutesRegistered(t *testing.T) {
 		{"POST", "/pullRequest/create"},
 		{"POST", "/pullRequest/merge"},
 		{"POST", "/pullRequest/reassign"},
+		{"GET", "/pullRequests/stats"},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.method+" "+tt.path, func(t *testing.T) {
+			if tt.method == http.MethodGet && tt.path == "/users/stats" {
+				prRepo.EXPECT().
+					GetReviewerAssignmentStats(gomock.Any()).
+					Return([]domain.ReviewerAssignmentStat(nil), nil)
+			}
+
+			if tt.method == http.MethodGet && tt.path == "/pullRequests/stats" {
+				prRepo.EXPECT().
+					GetPullRequestReviewerStats(gomock.Any()).
+					Return([]domain.PullRequestReviewersStat(nil), nil)
+			}
+
 			rr := httptest.NewRecorder()
 			req := httptest.NewRequest(tt.method, tt.path, nil)
 

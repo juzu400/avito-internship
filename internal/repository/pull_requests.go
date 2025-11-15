@@ -249,3 +249,71 @@ func (r *pullRequestRepositoryPG) Merge(
 
 	return pr, nil
 }
+
+// GetReviewerAssignmentStats returns statistics on the number of pull requests where user is a reviewer.
+func (r *pullRequestRepositoryPG) GetReviewerAssignmentStats(ctx context.Context) ([]domain.ReviewerAssignmentStat, error) {
+	const query = `
+        SELECT u.user_id AS reviewer_id,
+               COALESCE(COUNT(prr.pull_request_id), 0) AS assignments_count
+        FROM users u
+        LEFT JOIN pull_request_reviewers prr
+               ON prr.reviewer_id = u.user_id
+        GROUP BY u.user_id
+    `
+
+	rows, err := r.db.Pool.Query(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("query reviewer stats: %w", err)
+	}
+	defer rows.Close()
+
+	stats := make([]domain.ReviewerAssignmentStat, 0)
+
+	for rows.Next() {
+		var s domain.ReviewerAssignmentStat
+		if err := rows.Scan(&s.ReviewerID, &s.AssignmentsCount); err != nil {
+			return nil, fmt.Errorf("scan reviewer stats: %w", err)
+		}
+		stats = append(stats, s)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows reviewer stats: %w", err)
+	}
+
+	return stats, nil
+}
+
+// GetPullRequestReviewerStats returns statistics on the number of reviewers assigned per pull request.
+func (r *pullRequestRepositoryPG) GetPullRequestReviewerStats(ctx context.Context) ([]domain.PullRequestReviewersStat, error) {
+	const query = `
+        SELECT pr.pull_request_id,
+               COALESCE(COUNT(prr.reviewer_id), 0) AS reviewers_count
+        FROM pull_requests pr
+        LEFT JOIN pull_request_reviewers prr
+               ON prr.pull_request_id = pr.pull_request_id
+        GROUP BY pr.pull_request_id
+    `
+
+	rows, err := r.db.Pool.Query(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("query pull request stats: %w", err)
+	}
+	defer rows.Close()
+
+	stats := make([]domain.PullRequestReviewersStat, 0)
+
+	for rows.Next() {
+		var s domain.PullRequestReviewersStat
+		if err := rows.Scan(&s.PullRequestID, &s.ReviewersCount); err != nil {
+			return nil, fmt.Errorf("scan pull request stats: %w", err)
+		}
+		stats = append(stats, s)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows pull request stats: %w", err)
+	}
+
+	return stats, nil
+}
