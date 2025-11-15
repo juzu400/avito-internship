@@ -38,5 +38,7 @@ func NewRouter(log *slog.Logger, services *service.Services) http.Handler {
 	r.Post("/pullRequest/merge", h.MergePullRequest)
 	r.Post("/pullRequest/reassign", h.ReassignReviewer)
 
+	r.Get("/users/stats", h.GetReviewerStats)
+	r.Get("/pullRequests/stats", h.GetPullRequestStats)
 	return r
 }

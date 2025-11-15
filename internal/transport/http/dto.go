@@ -106,3 +106,25 @@ type ReassignReviewerResponse struct {
 	PR         PullRequestDTO `json:"pr"`
 	ReplacedBy string         `json:"replaced_by"`
 }
+
+// ReviewerStatsItemDTO represents statistics for a single reviewer.
+type ReviewerStatsItemDTO struct {
+	ReviewerID  string `json:"reviewer_id"`
+	Assignments int    `json:"assignments"`
+}
+
+// ReviewerStatsResponse is the response body for reviewer statistics.
+type ReviewerStatsResponse struct {
+	Items []ReviewerStatsItemDTO `json:"items"`
+}
+
+// PullRequestStatsItemDTO represents statistics for a single pull request.
+type PullRequestStatsItemDTO struct {
+	PullRequestID string `json:"pull_request_id"`
+	Reviewers     int    `json:"reviewers"`
+}
+
+// PullRequestStatsResponse is the response body for pull request statistics.
+type PullRequestStatsResponse struct {
+	Items []PullRequestStatsItemDTO `json:"items"`
+}

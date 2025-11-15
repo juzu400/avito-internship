@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"log/slog"
+	"reflect"
 	"testing"
 	"time"
 
@@ -635,5 +636,131 @@ func TestPullRequestService_ReassignReviewer_Success(t *testing.T) {
 	}
 	if len(gotPR.AssignedReviewers) != 1 || gotPR.AssignedReviewers[0] != newReviewerID {
 		t.Fatalf("expected reviewers [%q], got %v", newReviewerID, gotPR.AssignedReviewers)
+	}
+}
+
+func TestPullRequestService_GetReviewerAssignmentStats_Success(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	prRepo := mocks.NewMockPullRequestRepository(ctrl)
+
+	svc := &PullRequestService{
+		log: newTestLogger(),
+		prs: prRepo,
+	}
+
+	expected := []domain.ReviewerAssignmentStat{
+		{ReviewerID: domain.UserID("u1"), AssignmentsCount: 3},
+		{ReviewerID: domain.UserID("u2"), AssignmentsCount: 1},
+	}
+
+	prRepo.EXPECT().
+		GetReviewerAssignmentStats(gomock.Any()).
+		Return(expected, nil)
+
+	ctx := context.Background()
+
+	stats, err := svc.GetReviewerAssignmentStats(ctx)
+	if err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+
+	if !reflect.DeepEqual(stats, expected) {
+		t.Fatalf("unexpected stats:\n got:  %+v\n want: %+v", stats, expected)
+	}
+}
+
+func TestPullRequestService_GetReviewerAssignmentStats_Error(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	prRepo := mocks.NewMockPullRequestRepository(ctrl)
+
+	svc := &PullRequestService{
+		log: newTestLogger(),
+		prs: prRepo,
+	}
+
+	expectedErr := errors.New("db error")
+
+	prRepo.EXPECT().
+		GetReviewerAssignmentStats(gomock.Any()).
+		Return(nil, expectedErr)
+
+	ctx := context.Background()
+
+	stats, err := svc.GetReviewerAssignmentStats(ctx)
+	if err == nil {
+		t.Fatalf("expected error, got nil")
+	}
+	if !errors.Is(err, expectedErr) {
+		t.Fatalf("expected error %v, got %v", expectedErr, err)
+	}
+	if stats != nil {
+		t.Fatalf("expected nil stats on error, got: %+v", stats)
+	}
+}
+
+func TestPullRequestService_GetPullRequestReviewerStats_Success(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	prRepo := mocks.NewMockPullRequestRepository(ctrl)
+
+	svc := &PullRequestService{
+		log: newTestLogger(),
+		prs: prRepo,
+	}
+
+	expected := []domain.PullRequestReviewersStat{
+		{PullRequestID: domain.PullRequestID("pr-1"), ReviewersCount: 2},
+		{PullRequestID: domain.PullRequestID("pr-2"), ReviewersCount: 3},
+	}
+
+	prRepo.EXPECT().
+		GetPullRequestReviewerStats(gomock.Any()).
+		Return(expected, nil)
+
+	ctx := context.Background()
+
+	stats, err := svc.GetPullRequestReviewerStats(ctx)
+	if err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+
+	if !reflect.DeepEqual(stats, expected) {
+		t.Fatalf("unexpected stats:\n got:  %+v\n want: %+v", stats, expected)
+	}
+}
+
+func TestPullRequestService_GetPullRequestReviewerStats_Error(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	prRepo := mocks.NewMockPullRequestRepository(ctrl)
+
+	svc := &PullRequestService{
+		log: newTestLogger(),
+		prs: prRepo,
+	}
+
+	expectedErr := errors.New("db error")
+
+	prRepo.EXPECT().
+		GetPullRequestReviewerStats(gomock.Any()).
+		Return(nil, expectedErr)
+
+	ctx := context.Background()
+
+	stats, err := svc.GetPullRequestReviewerStats(ctx)
+	if err == nil {
+		t.Fatalf("expected error, got nil")
+	}
+	if !errors.Is(err, expectedErr) {
+		t.Fatalf("expected error %v, got %v", expectedErr, err)
+	}
+	if stats != nil {
+		t.Fatalf("expected nil stats on error, got: %+v", stats)
 	}
 }

@@ -270,3 +270,32 @@ func containsUserID(list []domain.UserID, id domain.UserID) bool {
 	}
 	return false
 }
+
+// GetReviewerAssignmentStats retrieves statistics on the number of pull request
+func (s *PullRequestService) GetReviewerAssignmentStats(ctx context.Context) ([]domain.ReviewerAssignmentStat, error) {
+	stats, err := s.prs.GetReviewerAssignmentStats(ctx)
+	if err != nil {
+		s.log.Error("GetReviewerAssignmentStats failed",
+			slog.String("operation", "GetReviewerAssignmentStats"),
+			slog.String("error_code", ErrorCode(err)),
+			slog.Any("err", err),
+		)
+		return nil, err
+	}
+
+	return stats, nil
+}
+
+// GetPullRequestReviewerStats retrieves statistics on the number of reviewers
+func (s *PullRequestService) GetPullRequestReviewerStats(ctx context.Context) ([]domain.PullRequestReviewersStat, error) {
+	stats, err := s.prs.GetPullRequestReviewerStats(ctx)
+	if err != nil {
+		s.log.Error("GetPullRequestReviewerStats failed",
+			slog.String("operation", "GetPullRequestReviewerStats"),
+			slog.String("error_code", ErrorCode(err)),
+			slog.Any("err", err),
+		)
+		return nil, err
+	}
+	return stats, nil
+}

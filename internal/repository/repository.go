@@ -27,6 +27,8 @@ type PullRequestRepository interface {
 	GetByID(ctx context.Context, id domain.PullRequestID) (*domain.PullRequest, error)
 	ListByReviewer(ctx context.Context, reviewerID domain.UserID) ([]*domain.PullRequest, error)
 	Merge(ctx context.Context, id domain.PullRequestID, mergedAt time.Time) (*domain.PullRequest, error)
+	GetReviewerAssignmentStats(ctx context.Context) ([]domain.ReviewerAssignmentStat, error)
+	GetPullRequestReviewerStats(ctx context.Context) ([]domain.PullRequestReviewersStat, error)
 }
 
 // Repositories groups all repository interfaces used by services.
