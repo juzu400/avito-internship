@@ -42,14 +42,14 @@
 ## Коротко про поведение и ошибки
 
 Все ошибки возвращаются в едином формате:
-
+```json
 {
   "error": {
     "code": "КОД_ОШИБКИ",
     "message": "описание"
   }
 }
-
+```
 Основные коды ошибок:  
 `VALIDATION_ERROR`, `NOT_FOUND`, `TEAM_EXISTS`, `PR_EXISTS`, `PR_MERGED`, `NOT_ASSIGNED`, `NO_CANDIDATE`, `INTERNAL_ERROR`.
 
