@@ -1,0 +1,37 @@
+# Go build
+bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Go modules
+go.sum
+
+# IDE / editor
+.vscode/
+.idea/
+*.iml
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Env / config
+.env
+.env.local
+.env.*
+
+# Coverage / test artifacts
+coverage.out
+coverage.txt
+
+# Docker / runtime
+postgres-data/
+.tmp/
