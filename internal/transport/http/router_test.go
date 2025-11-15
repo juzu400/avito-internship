@@ -22,7 +22,7 @@ func TestRouter_AllRoutesRegistered(t *testing.T) {
 	repos := &repository.Repositories{Users: userRepo, Teams: teamRepo, PullRequests: prRepo}
 	services := service.NewServices(log, repos)
 
-	r := NewRouter(log, services, "ADMIN_TOKEN")
+	r := NewRouter(log, services)
 
 	tests := []struct {
 		method string
@@ -55,7 +55,7 @@ func TestRouter_AllRoutesRegistered(t *testing.T) {
 func TestRouter_UnknownRouteReturns404(t *testing.T) {
 	log := newTestLogger()
 	services := service.NewServices(log, &repository.Repositories{})
-	r := NewRouter(log, services, "ADMIN_TOKEN")
+	r := NewRouter(log, services)
 
 	rr := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "/unknown/path", nil)

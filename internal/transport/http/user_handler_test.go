@@ -30,15 +30,33 @@ func TestSetUserActive_InvalidJSON(t *testing.T) {
 }
 
 func TestSetUserActive_Success(t *testing.T) {
-	h, userRepo, _, _ := newTestHandler(t)
+	h, userRepo, teamRepo, _ := newTestHandler(t)
 
 	body := `{"user_id": "u1", "is_active": true}`
 	rr := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodPost, "/users/setIsActive", strings.NewReader(body))
 
-	userRepo.EXPECT().
-		SetIsActive(gomock.Any(), domain.UserID("u1"), true).
-		Return(nil)
+	userID := domain.UserID("u1")
+
+	gomock.InOrder(
+		userRepo.EXPECT().
+			SetIsActive(gomock.Any(), userID, true).
+			Return(nil),
+
+		userRepo.EXPECT().
+			GetByID(gomock.Any(), userID).
+			Return(&domain.User{
+				ID:       userID,
+				Username: "Alice",
+				IsActive: true,
+			}, nil),
+
+		teamRepo.EXPECT().
+			GetByMemberID(gomock.Any(), userID).
+			Return(&domain.Team{
+				Name: "backend",
+			}, nil),
+	)
 
 	h.SetUserActive(rr, req)
 
@@ -49,14 +67,27 @@ func TestSetUserActive_Success(t *testing.T) {
 	var resp struct {
 		User struct {
 			UserID   string `json:"user_id"`
+			Username string `json:"username"`
+			TeamName string `json:"team_name"`
 			IsActive bool   `json:"is_active"`
 		} `json:"user"`
 	}
+
 	if err := json.NewDecoder(rr.Body).Decode(&resp); err != nil {
 		t.Fatalf("failed to decode body: %v", err)
 	}
-	if resp.User.UserID != "u1" || !resp.User.IsActive {
-		t.Fatalf("unexpected body: %+v", resp.User)
+
+	if resp.User.UserID != "u1" {
+		t.Fatalf("expected user_id %q, got %q", "u1", resp.User.UserID)
+	}
+	if resp.User.Username != "Alice" {
+		t.Fatalf("expected username %q, got %q", "Alice", resp.User.Username)
+	}
+	if resp.User.TeamName != "backend" {
+		t.Fatalf("expected team_name %q, got %q", "backend", resp.User.TeamName)
+	}
+	if !resp.User.IsActive {
+		t.Fatalf("expected is_active = true, got %#v", resp.User.IsActive)
 	}
 }
 
@@ -85,7 +116,7 @@ func TestGetUserReview_UserNotFound(t *testing.T) {
 
 	userRepo.EXPECT().
 		GetByID(gomock.Any(), domain.UserID("u10")).
-		Return(nil, domain.ErrUserNotFound)
+		Return(nil, domain.ErrNotFound)
 
 	h.GetUserReview(rr, req)
 

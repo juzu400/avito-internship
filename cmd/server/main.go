@@ -39,10 +39,9 @@ func main() {
 	}
 	log.Info("migrations applied")
 
-	adminToken := os.Getenv("ADMIN_TOKEN")
 	repos := repository.NewRepositories(db)
 	services := service.NewServices(log, repos)
-	router := httptransport.NewRouter(log, services, adminToken)
+	router := httptransport.NewRouter(log, services)
 
 	srv := &http.Server{
 		Addr:    cfg.HTTPAddr,

@@ -2,20 +2,26 @@ package service
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
 
 	"github.com/juzu400/avito-internship/internal/domain"
 )
 
-func (s *UsersService) SetIsActive(ctx context.Context, id domain.UserID, active bool) error {
+func (s *UsersService) validateUserID(op string, id domain.UserID) error {
 	if id == "" {
 		err := fmt.Errorf("%w: user_id is empty", domain.ErrValidation)
-		s.log.Warn("validate SetIsActive failed",
+		s.log.Warn("validate "+op+" failed",
 			slog.String("error_code", ErrCodeValidation),
 			slog.String("reason", "empty user_id"),
 		)
+		return err
+	}
+	return nil
+}
+
+func (s *UsersService) SetIsActive(ctx context.Context, id domain.UserID, active bool) error {
+	if err := s.validateUserID("SetIsActive", id); err != nil {
 		return err
 	}
 
@@ -24,40 +30,40 @@ func (s *UsersService) SetIsActive(ctx context.Context, id domain.UserID, active
 		slog.Bool("is_active", active),
 	)
 
-	err := s.users.SetIsActive(ctx, id, active)
-	if err != nil {
+	if err := s.users.SetIsActive(ctx, id, active); err != nil {
 		s.log.Error("SetIsActive failed",
 			slog.String("user_id", string(id)),
 			slog.String("error_code", ErrorCode(err)),
 			slog.Any("err", err),
 		)
+		return err
 	}
-	return err
+
+	return nil
 }
 
-func (s *UsersService) GetReviews(ctx context.Context, id domain.UserID) ([]*domain.PullRequest, error) {
-	if id == "" {
-		err := fmt.Errorf("%w: user_id is empty", domain.ErrValidation)
-		s.log.Warn("validate GetReviews failed",
-			slog.String("error_code", ErrCodeValidation),
-			slog.String("reason", "empty user_id"),
-		)
+func (s *UsersService) GetByID(ctx context.Context, id domain.UserID) (*domain.User, error) {
+	if err := s.validateUserID("GetByID", id); err != nil {
 		return nil, err
 	}
 
-	if _, err := s.users.GetByID(ctx, id); err != nil {
-		if errors.Is(err, domain.ErrUserNotFound) {
-			s.log.Warn("GetReviews: user not found",
-				slog.String("user_id", string(id)),
-				slog.String("error_code", ErrorCode(err)),
-			)
-			return nil, err
-		}
-		s.log.Error("GetByID in GetReviews failed",
+	s.log.Info("get user by id", slog.String("user_id", string(id)))
+
+	u, err := s.users.GetByID(ctx, id)
+	if err != nil {
+		s.log.Error("GetByID failed",
 			slog.String("user_id", string(id)),
 			slog.String("error_code", ErrorCode(err)),
 			slog.Any("err", err),
 		)
+		return nil, err
+	}
+
+	return u, nil
+}
+
+func (s *UsersService) GetReviews(ctx context.Context, id domain.UserID) ([]*domain.PullRequest, error) {
+	if _, err := s.GetByID(ctx, id); err != nil {
 		return nil, err
 	}
 

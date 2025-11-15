@@ -87,7 +87,7 @@ func TestTeamsService_UpsertTeam_ValidationDuplicateMembers(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	svc, _ := newTestTeamsService(ctrl)
+	svc, teamRepo := newTestTeamsService(ctrl)
 
 	team := &domain.Team{
 		Name: "backend",
@@ -104,6 +104,10 @@ func TestTeamsService_UpsertTeam_ValidationDuplicateMembers(t *testing.T) {
 			},
 		},
 	}
+
+	teamRepo.EXPECT().
+		GetByMemberID(gomock.Any(), domain.UserID("u1")).
+		Return(nil, domain.ErrNotFound)
 
 	err := svc.UpsertTeam(context.Background(), team)
 	if err == nil {
@@ -136,9 +140,22 @@ func TestTeamsService_UpsertTeam_Success(t *testing.T) {
 		},
 	}
 
-	teamRepo.EXPECT().
-		UpsertTeam(gomock.Any(), team).
-		Return(nil)
+	userID1 := domain.UserID("u1")
+	userID2 := domain.UserID("u2")
+
+	gomock.InOrder(
+		teamRepo.EXPECT().
+			GetByMemberID(gomock.Any(), userID1).
+			Return(nil, domain.ErrNotFound),
+		teamRepo.EXPECT().
+			GetByMemberID(gomock.Any(), userID2).
+			Return(nil, domain.ErrNotFound),
+
+		// затем уже апсертим команду
+		teamRepo.EXPECT().
+			UpsertTeam(gomock.Any(), team).
+			Return(nil),
+	)
 
 	err := svc.UpsertTeam(context.Background(), team)
 	if err != nil {
@@ -164,10 +181,18 @@ func TestTeamsService_UpsertTeam_RepoErrorPropagated(t *testing.T) {
 	}
 
 	repoErr := errors.New("db error")
+	userID := domain.UserID("u1")
 
-	teamRepo.EXPECT().
-		UpsertTeam(gomock.Any(), team).
-		Return(repoErr)
+	gomock.InOrder(
+		// участник не в другой команде
+		teamRepo.EXPECT().
+			GetByMemberID(gomock.Any(), userID).
+			Return(nil, domain.ErrNotFound),
+
+		teamRepo.EXPECT().
+			UpsertTeam(gomock.Any(), team).
+			Return(repoErr),
+	)
 
 	err := svc.UpsertTeam(context.Background(), team)
 	if !errors.Is(err, repoErr) {
@@ -296,5 +321,31 @@ func TestTeamsService_GetByMemberID_RepoErrorPropagated(t *testing.T) {
 	}
 	if !errors.Is(err, repoErr) {
 		t.Fatalf("expected %v, got %v", repoErr, err)
+	}
+}
+
+func TestTeamsService_UpsertTeam_UserAlreadyInAnotherTeam(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	svc, teamRepo := newTestTeamsService(ctrl)
+
+	team := &domain.Team{
+		Name: "frontend",
+		Members: []domain.User{
+			{ID: "u1", Username: "Alice", IsActive: true},
+		},
+	}
+
+	teamRepo.EXPECT().
+		GetByMemberID(gomock.Any(), domain.UserID("u1")).
+		Return(&domain.Team{Name: "backend"}, nil)
+
+	err := svc.UpsertTeam(context.Background(), team)
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	if !errors.Is(err, domain.ErrValidation) {
+		t.Fatalf("expected validation error, got %v", err)
 	}
 }

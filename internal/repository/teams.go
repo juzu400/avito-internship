@@ -86,7 +86,7 @@ func (r *teamRepositoryPG) GetByName(ctx context.Context, name string) (*domain.
     `, name)
 
 	if err := row.Scan(&teamID); err != nil {
-		return nil, domain.ErrTeamNotFound
+		return nil, domain.ErrNotFound
 	}
 
 	team := &domain.Team{
@@ -130,7 +130,7 @@ func (r *teamRepositoryPG) GetByMemberID(ctx context.Context, userID domain.User
     `, string(userID))
 
 	if err := row.Scan(&teamID, &teamName); err != nil {
-		return nil, domain.ErrTeamNotFound
+		return nil, domain.ErrNotFound
 	}
 
 	team := &domain.Team{

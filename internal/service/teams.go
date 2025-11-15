@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 
@@ -51,6 +52,27 @@ func (s *TeamsService) UpsertTeam(ctx context.Context, team *domain.Team) error 
 			return err
 		}
 		seen[m.ID] = struct{}{}
+		existingTeam, err := s.teams.GetByMemberID(ctx, m.ID)
+		if err != nil {
+			if !errors.Is(err, domain.ErrNotFound) {
+				s.log.Error("UpsertTeam: GetByMemberID failed",
+					slog.String("team_name", team.Name),
+					slog.String("user_id", string(m.ID)),
+					slog.String("error_code", ErrorCode(err)),
+					slog.Any("err", err),
+				)
+				return err
+			}
+		} else if existingTeam.Name != team.Name {
+			err := fmt.Errorf("%w: user %s already in team %s", domain.ErrValidation, m.ID, existingTeam.Name)
+			s.log.Warn("validate UpsertTeam failed",
+				slog.String("error_code", ErrCodeValidation),
+				slog.String("reason", "user already in another team"),
+				slog.String("user_id", string(m.ID)),
+				slog.String("existing_team", existingTeam.Name),
+			)
+			return err
+		}
 	}
 
 	err := s.teams.UpsertTeam(ctx, team)

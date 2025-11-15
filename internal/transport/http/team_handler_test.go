@@ -1,6 +1,7 @@
 package http
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -42,14 +43,38 @@ func TestAddTeam_Success(t *testing.T) {
 	rr := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodPost, "/team/add", strings.NewReader(body))
 
-	teamRepo.EXPECT().
-		UpsertTeam(gomock.Any(), gomock.AssignableToTypeOf(&domain.Team{})).
-		Return(nil)
+	userID := domain.UserID("u1")
+
+	gomock.InOrder(
+		teamRepo.EXPECT().
+			GetByMemberID(gomock.Any(), userID).
+			Return(nil, domain.ErrNotFound),
+
+		teamRepo.EXPECT().
+			UpsertTeam(gomock.Any(), gomock.AssignableToTypeOf(&domain.Team{})).
+			Return(nil),
+	)
 
 	h.AddTeam(rr, req)
 
 	if rr.Code != http.StatusCreated {
 		t.Fatalf("expected status %d, got %d", http.StatusCreated, rr.Code)
+	}
+
+	var resp TeamDTO
+	if err := json.NewDecoder(rr.Body).Decode(&resp); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+
+	if resp.TeamName != "backend" {
+		t.Fatalf("expected team_name %q, got %q", "backend", resp.TeamName)
+	}
+	if len(resp.Members) != 1 {
+		t.Fatalf("expected 1 member, got %d", len(resp.Members))
+	}
+	m := resp.Members[0]
+	if m.UserID != "u1" || m.Username != "Alice" || !m.IsActive {
+		t.Fatalf("unexpected member: %+v", m)
 	}
 }
 
@@ -78,7 +103,7 @@ func TestGetTeam_NotFound(t *testing.T) {
 
 	teamRepo.EXPECT().
 		GetByName(gomock.Any(), "backend").
-		Return(nil, domain.ErrTeamNotFound)
+		Return(nil, domain.ErrNotFound)
 
 	h.GetTeam(rr, req)
 
@@ -87,6 +112,6 @@ func TestGetTeam_NotFound(t *testing.T) {
 	}
 	code, _ := decodeError(t, rr)
 	if code != codeNotFound {
-		t.Fatalf("expected error code TEAM_NOT_FOUND, got %q", code)
+		t.Fatalf("expected error code NOT_FOUND, got %q", code)
 	}
 }

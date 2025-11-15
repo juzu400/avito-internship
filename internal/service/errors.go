@@ -19,9 +19,7 @@ const (
 
 func ErrorCode(err error) string {
 	switch {
-	case errors.Is(err, domain.ErrUserNotFound),
-		errors.Is(err, domain.ErrTeamNotFound),
-		errors.Is(err, domain.ErrPullRequestNotFound):
+	case errors.Is(err, domain.ErrNotFound):
 		return ErrCodeNotFound
 	case errors.Is(err, domain.ErrPullRequestAlreadyMerged):
 		return ErrCodePullRequestAlreadyMerged

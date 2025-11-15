@@ -91,7 +91,7 @@ func (r *pullRequestRepositoryPG) Update(ctx context.Context, pr *domain.PullReq
 		return fmt.Errorf("update pull_request: %w", err)
 	}
 	if cmd.RowsAffected() == 0 {
-		return domain.ErrPullRequestNotFound
+		return domain.ErrNotFound
 	}
 
 	if _, err := tx.Exec(ctx, `
@@ -124,7 +124,7 @@ func (r *pullRequestRepositoryPG) GetByID(ctx context.Context, id domain.PullReq
 	var mergedAt *time.Time
 	if err := row.Scan(&pr.ID, &pr.Name, &pr.AuthorID, &status, &pr.CreatedAt, &mergedAt); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, domain.ErrPullRequestNotFound
+			return nil, domain.ErrNotFound
 		}
 		return nil, fmt.Errorf("get pull_request by id %s: %w", id, err)
 	}

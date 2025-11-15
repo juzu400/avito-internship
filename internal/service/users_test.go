@@ -176,7 +176,7 @@ func TestUsersService_GetReviews_UserNotFound(t *testing.T) {
 
 	userRepo.EXPECT().
 		GetByID(gomock.Any(), userID).
-		Return(nil, domain.ErrUserNotFound)
+		Return(nil, domain.ErrNotFound)
 
 	prRepo.EXPECT().
 		ListByReviewer(gomock.Any(), gomock.Any()).
@@ -186,7 +186,7 @@ func TestUsersService_GetReviews_UserNotFound(t *testing.T) {
 	if prs != nil {
 		t.Fatalf("expected nil prs, got %#v", prs)
 	}
-	if !errors.Is(err, domain.ErrUserNotFound) {
-		t.Fatalf("expected ErrUserNotFound, got %v", err)
+	if !errors.Is(err, domain.ErrNotFound) {
+		t.Fatalf("expected ErrNotFound, got %v", err)
 	}
 }

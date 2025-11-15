@@ -2,6 +2,7 @@ package http
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"log/slog"
@@ -11,12 +12,6 @@ import (
 )
 
 func (h *Handler) SetUserActive(w http.ResponseWriter, r *http.Request) {
-	if h.adminToken != "" {
-		if r.Header.Get("X-Admin-Token") != h.adminToken {
-			writeError(w, http.StatusUnauthorized, service.ErrCodeNotFound, "resource not found")
-			return
-		}
-	}
 	var req SetUserActiveRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		h.log.Warn("SetUserActive: invalid json", slog.Any("err", err))
@@ -24,18 +19,39 @@ func (h *Handler) SetUserActive(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.services.Users.SetIsActive(r.Context(), domain.UserID(req.UserID), req.IsActive); err != nil {
+	userID := domain.UserID(req.UserID)
+
+	if err := h.services.Users.SetIsActive(r.Context(), userID, req.IsActive); err != nil {
 		status, code := mapErrorToHTTP(err)
 		writeError(w, status, code, err.Error())
 		return
 	}
 
+	u, err := h.services.Users.GetByID(r.Context(), userID)
+	if err != nil {
+		status, code := mapErrorToHTTP(err)
+		writeError(w, status, code, err.Error())
+		return
+	}
+
+	var teamName string
+	team, err := h.services.Teams.GetByMemberID(r.Context(), userID)
+	if err != nil {
+		if !errors.Is(err, domain.ErrNotFound) {
+			status, code := mapErrorToHTTP(err)
+			writeError(w, status, code, err.Error())
+			return
+		}
+	} else {
+		teamName = team.Name
+	}
+
 	resp := UserResponse{
 		User: UserDTO{
-			UserID:   req.UserID,
-			Username: "",
-			TeamName: "",
-			IsActive: req.IsActive,
+			UserID:   string(u.ID),
+			Username: u.Username,
+			TeamName: teamName,
+			IsActive: u.IsActive,
 		},
 	}
 

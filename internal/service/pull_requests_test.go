@@ -196,7 +196,7 @@ func TestPullRequestService_Create_TeamNotFound(t *testing.T) {
 	teamRepo.
 		EXPECT().
 		GetByMemberID(gomock.Any(), authorID).
-		Return(nil, domain.ErrTeamNotFound)
+		Return(nil, domain.ErrNotFound)
 
 	svc := &PullRequestService{
 		log:   newTestLogger(),
@@ -206,8 +206,8 @@ func TestPullRequestService_Create_TeamNotFound(t *testing.T) {
 	}
 
 	_, err := svc.Create(context.Background(), "pr-1", "Test PR", authorID)
-	if !errors.Is(err, domain.ErrTeamNotFound) {
-		t.Fatalf("expected ErrTeamNotFound, got %v", err)
+	if !errors.Is(err, domain.ErrNotFound) {
+		t.Fatalf("expected ErrNotFound, got %v", err)
 	}
 }
 
@@ -278,7 +278,7 @@ func TestPullRequestService_Merge_NotFound(t *testing.T) {
 	prRepo.
 		EXPECT().
 		GetByID(gomock.Any(), prID).
-		Return(nil, domain.ErrPullRequestNotFound)
+		Return(nil, domain.ErrNotFound)
 
 	svc := &PullRequestService{
 		log:   newTestLogger(),
@@ -288,8 +288,8 @@ func TestPullRequestService_Merge_NotFound(t *testing.T) {
 	}
 
 	_, err := svc.Merge(context.Background(), prID)
-	if !errors.Is(err, domain.ErrPullRequestNotFound) {
-		t.Fatalf("expected ErrPullRequestNotFound, got %v", err)
+	if !errors.Is(err, domain.ErrNotFound) {
+		t.Fatalf("expected ErrNotFound, got %v", err)
 	}
 }
 
@@ -368,7 +368,7 @@ func TestPullRequestService_ReassignReviewer_NotFound(t *testing.T) {
 	prRepo.
 		EXPECT().
 		GetByID(gomock.Any(), prID).
-		Return(nil, domain.ErrPullRequestNotFound)
+		Return(nil, domain.ErrNotFound)
 
 	svc := &PullRequestService{
 		log:   newTestLogger(),
@@ -378,8 +378,8 @@ func TestPullRequestService_ReassignReviewer_NotFound(t *testing.T) {
 	}
 
 	_, _, err := svc.ReassignReviewer(context.Background(), prID, oldID)
-	if !errors.Is(err, domain.ErrPullRequestNotFound) {
-		t.Fatalf("expected ErrPullRequestNotFound, got %v", err)
+	if !errors.Is(err, domain.ErrNotFound) {
+		t.Fatalf("expected ErrNotFound, got %v", err)
 	}
 }
 
@@ -484,7 +484,7 @@ func TestPullRequestService_ReassignReviewer_TeamNotFound(t *testing.T) {
 	teamRepo.
 		EXPECT().
 		GetByMemberID(gomock.Any(), oldID).
-		Return(nil, domain.ErrTeamNotFound)
+		Return(nil, domain.ErrNotFound)
 
 	svc := &PullRequestService{
 		log:   newTestLogger(),
@@ -494,8 +494,8 @@ func TestPullRequestService_ReassignReviewer_TeamNotFound(t *testing.T) {
 	}
 
 	_, _, err := svc.ReassignReviewer(context.Background(), prID, oldID)
-	if !errors.Is(err, domain.ErrTeamNotFound) {
-		t.Fatalf("expected ErrTeamNotFound, got %v", err)
+	if !errors.Is(err, domain.ErrNotFound) {
+		t.Fatalf("expected ErrNotFound, got %v", err)
 	}
 }
 

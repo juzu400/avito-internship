@@ -11,16 +11,14 @@ import (
 )
 
 type Handler struct {
-	log        *slog.Logger
-	services   *service.Services
-	adminToken string
+	log      *slog.Logger
+	services *service.Services
 }
 
-func NewRouter(log *slog.Logger, services *service.Services, adminToken string) http.Handler {
+func NewRouter(log *slog.Logger, services *service.Services) http.Handler {
 	h := &Handler{
-		log:        log.With(slog.String("layer", "http")),
-		services:   services,
-		adminToken: adminToken,
+		log:      log.With(slog.String("layer", "http")),
+		services: services,
 	}
 
 	r := chi.NewRouter()
