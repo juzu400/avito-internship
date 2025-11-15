@@ -21,6 +21,8 @@ func NewPullRequestRepository(db *DB) *pullRequestRepositoryPG {
 	return &pullRequestRepositoryPG{db: db}
 }
 
+// Create inserts a new pull request and its reviewers into the database.
+// If a pull request with the same ID already exists, ErrPullRequestAlreadyExists is returned.
 func (r *pullRequestRepositoryPG) Create(ctx context.Context, pr *domain.PullRequest) error {
 	tx, err := r.db.Pool.BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
@@ -64,6 +66,8 @@ func (r *pullRequestRepositoryPG) Create(ctx context.Context, pr *domain.PullReq
 	return nil
 }
 
+// Update updates pull request fields and completely replaces its reviewers.
+// If the pull request does not exist, ErrNotFound is returned.
 func (r *pullRequestRepositoryPG) Update(ctx context.Context, pr *domain.PullRequest) error {
 	tx, err := r.db.Pool.BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
@@ -112,6 +116,8 @@ func (r *pullRequestRepositoryPG) Update(ctx context.Context, pr *domain.PullReq
 	return nil
 }
 
+// GetByID retrieves a pull request with its reviewers by ID.
+// If the pull request does not exist, ErrNotFound is returned.
 func (r *pullRequestRepositoryPG) GetByID(ctx context.Context, id domain.PullRequestID) (*domain.PullRequest, error) {
 	row := r.db.Pool.QueryRow(ctx, `
         SELECT pull_request_id, pull_request_name, author_id, status, created_at, merged_at
@@ -154,6 +160,8 @@ func (r *pullRequestRepositoryPG) GetByID(ctx context.Context, id domain.PullReq
 	return &pr, nil
 }
 
+// ListByReviewer returns pull requests where the given user is assigned as a reviewer,
+// ordered by creation time in descending order.
 func (r *pullRequestRepositoryPG) ListByReviewer(ctx context.Context, reviewerID domain.UserID) ([]*domain.PullRequest, error) {
 	rows, err := r.db.Pool.Query(ctx, `
         SELECT p.pull_request_id, p.pull_request_name, p.author_id, p.status, p.created_at, p.merged_at
@@ -186,6 +194,7 @@ func (r *pullRequestRepositoryPG) ListByReviewer(ctx context.Context, reviewerID
 	return result, nil
 }
 
+// saveReviewers stores reviewer assignments for the given pull request inside the transaction.
 func saveReviewers(ctx context.Context, tx pgx.Tx, prID domain.PullRequestID, reviewers []domain.UserID) error {
 	for _, rid := range reviewers {
 		if _, err := tx.Exec(ctx, `
@@ -196,4 +205,47 @@ func saveReviewers(ctx context.Context, tx pgx.Tx, prID domain.PullRequestID, re
 		}
 	}
 	return nil
+}
+
+// Merge atomically marks a pull request as merged.
+// If the pull request is already merged, it returns the existing state without error.
+// If the pull request does not exist, ErrNotFound is returned.
+func (r *pullRequestRepositoryPG) Merge(
+	ctx context.Context,
+	id domain.PullRequestID,
+	mergedAt time.Time,
+) (*domain.PullRequest, error) {
+	cmdTag, err := r.db.Pool.Exec(ctx, `
+        UPDATE pull_requests
+        SET status = $2,
+            merged_at = $3
+        WHERE pull_request_id = $1
+          AND status = $4
+    `,
+		id,
+		domain.PRStatusMerged,
+		mergedAt,
+		domain.PRStatusOpen,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("merge pull request %s: %w", id, err)
+	}
+
+	if cmdTag.RowsAffected() == 0 {
+		pr, err := r.GetByID(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		if pr.IsMerged() {
+			return pr, nil
+		}
+		return nil, fmt.Errorf("merge pull request %s: unexpected status %s", id, pr.Status)
+	}
+
+	pr, err := r.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	return pr, nil
 }

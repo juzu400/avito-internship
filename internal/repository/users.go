@@ -17,6 +17,8 @@ func NewUserRepository(db *DB) *userRepositoryPG {
 	return &userRepositoryPG{db: db}
 }
 
+// GetByID returns a user by ID.
+// If the user does not exist, domain.ErrNotFound is returned.
 func (r *userRepositoryPG) GetByID(ctx context.Context, id domain.UserID) (*domain.User, error) {
 	row := r.db.Pool.QueryRow(ctx, `
         SELECT user_id, username, is_active
@@ -35,6 +37,8 @@ func (r *userRepositoryPG) GetByID(ctx context.Context, id domain.UserID) (*doma
 	return &u, nil
 }
 
+// SetIsActive updates the is_active flag for the given user.
+// If the user does not exist, domain.ErrNotFound is returned.
 func (r *userRepositoryPG) SetIsActive(ctx context.Context, id domain.UserID, active bool) error {
 	cmd, err := r.db.Pool.Exec(ctx, `
         UPDATE users

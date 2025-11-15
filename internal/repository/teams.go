@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5"
@@ -20,6 +21,9 @@ func NewTeamRepository(db *DB) *teamRepositoryPG {
 	return &teamRepositoryPG{db: db}
 }
 
+// UpsertTeam creates a new team with the given members or fails if a team
+// with the same name already exists. User records are upserted into the users
+// table.
 func (r *teamRepositoryPG) UpsertTeam(ctx context.Context, team *domain.Team) error {
 	tx, err := r.db.Pool.BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
@@ -77,6 +81,8 @@ func (r *teamRepositoryPG) UpsertTeam(ctx context.Context, team *domain.Team) er
 	return nil
 }
 
+// GetByMemberID returns a team and its members for the given user ID.
+// If the user does not belong to any team, domain.ErrNotFound is returned.
 func (r *teamRepositoryPG) GetByName(ctx context.Context, name string) (*domain.Team, error) {
 	var teamID int64
 	row := r.db.Pool.QueryRow(ctx, `
@@ -117,6 +123,8 @@ func (r *teamRepositoryPG) GetByName(ctx context.Context, name string) (*domain.
 	return team, nil
 }
 
+// GetTeamsByMemberIDs returns teams for the given user IDs keyed by user ID.
+// Users that are not members of any team are not present in the result map.
 func (r *teamRepositoryPG) GetByMemberID(ctx context.Context, userID domain.UserID) (*domain.Team, error) {
 	var teamID int64
 	var teamName string
@@ -159,4 +167,48 @@ func (r *teamRepositoryPG) GetByMemberID(ctx context.Context, userID domain.User
 	}
 
 	return team, nil
+}
+
+func (r *teamRepositoryPG) GetTeamsByMemberIDs(ctx context.Context, userIDs []domain.UserID) (map[domain.UserID]*domain.Team, error) {
+	if len(userIDs) == 0 {
+		return map[domain.UserID]*domain.Team{}, nil
+	}
+
+	args := make([]any, len(userIDs))
+	placeholders := make([]string, len(userIDs))
+	for i, id := range userIDs {
+		args[i] = string(id)
+		placeholders[i] = fmt.Sprintf("$%d", i+1)
+	}
+
+	rows, err := r.db.Pool.Query(ctx, fmt.Sprintf(`
+        SELECT tm.user_id, t.team_name
+        FROM team_members tm
+        JOIN teams t ON t.id = tm.team_id
+        WHERE tm.user_id IN (%s)
+    `, strings.Join(placeholders, ",")), args...)
+	if err != nil {
+		return nil, fmt.Errorf("get teams by member ids: %w", err)
+	}
+	defer rows.Close()
+
+	res := make(map[domain.UserID]*domain.Team, len(userIDs))
+	for rows.Next() {
+		var userID string
+		var teamName string
+
+		if err := rows.Scan(&userID, &teamName); err != nil {
+			return nil, fmt.Errorf("scan team by member id: %w", err)
+		}
+
+		res[domain.UserID(userID)] = &domain.Team{
+			Name: teamName,
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate teams by member ids: %w", err)
+	}
+
+	return res, nil
 }

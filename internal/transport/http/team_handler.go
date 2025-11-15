@@ -10,6 +10,9 @@ import (
 	"github.com/juzu400/avito-internship/internal/service"
 )
 
+// AddTeam handles POST /team/add.
+// It accepts a team with members in the request body, validates and upserts it
+// through the TeamsService, and returns the resulting team representation.
 func (h *Handler) AddTeam(w http.ResponseWriter, r *http.Request) {
 	var req TeamDTO
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -51,6 +54,9 @@ func (h *Handler) AddTeam(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, resp)
 }
 
+// GetTeam handles GET /team/get.
+// It expects a "team_name" query parameter, fetches the team with its members
+// via TeamsService and returns it as JSON.
 func (h *Handler) GetTeam(w http.ResponseWriter, r *http.Request) {
 	teamName := r.URL.Query().Get("team_name")
 	if teamName == "" {

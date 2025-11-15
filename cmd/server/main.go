@@ -18,6 +18,9 @@ import (
 	httptransport "github.com/juzu400/avito-internship/internal/transport/http"
 )
 
+// Command avito-internship starts HTTP API server for the internship task.
+// It loads configuration, initializes logger and database connection,
+// applies database migrations and runs the HTTP server with graceful shutdown.
 func main() {
 	cfg := config.MustLoad()
 	log := logger.New(logger.Config{Level: cfg.LogLevel})

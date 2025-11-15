@@ -24,6 +24,7 @@ type PullRequestService struct {
 	prs   repository.PullRequestRepository
 }
 
+// Services groups all application services for convenient wiring in main and transport layers.
 type Services struct {
 	Users        *UsersService
 	Teams        *TeamsService

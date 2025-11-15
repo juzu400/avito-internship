@@ -2,6 +2,9 @@ package domain
 
 import "errors"
 
+// Common domain-level errors. They are used to distinguish between different
+// business situations (validation issues, conflicts, missing resources, etc.),
+// and are later mapped to HTTP error codes in the transport layer.
 var (
 	ErrNotFound                 = errors.New("resource not found")
 	ErrPullRequestAlreadyMerged = errors.New("pull request already merged")

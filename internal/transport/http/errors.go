@@ -6,6 +6,8 @@ import (
 	"github.com/juzu400/avito-internship/internal/service"
 )
 
+// mapErrorToHTTP converts a domain/service error into an HTTP status code
+// and a stable error code used in JSON responses.
 func mapErrorToHTTP(err error) (status int, code string) {
 	if err == nil {
 		return http.StatusOK, ""

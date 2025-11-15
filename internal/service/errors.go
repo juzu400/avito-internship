@@ -17,6 +17,8 @@ const (
 	ErrCodeNoReviewerCandidates     = "NO_CANDIDATE"
 )
 
+// ErrorCode maps a domain or service error to a stable string error code
+// that is used in HTTP responses.
 func ErrorCode(err error) string {
 	switch {
 	case errors.Is(err, domain.ErrNotFound):

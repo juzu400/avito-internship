@@ -10,6 +10,9 @@ import (
 	"github.com/juzu400/avito-internship/internal/service"
 )
 
+// CreatePullRequest handles POST /pullRequest/create.
+// It decodes the request body, delegates creation to the PullRequestService
+// and returns the created pull request on success.
 func (h *Handler) CreatePullRequest(w http.ResponseWriter, r *http.Request) {
 	var req CreatePullRequestRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -41,6 +44,9 @@ func (h *Handler) CreatePullRequest(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, resp)
 }
 
+// MergePullRequest handles POST /pullRequest/merge.
+// It decodes the request body, calls PullRequestService.Merge and returns
+// the resulting pull request state.
 func (h *Handler) MergePullRequest(w http.ResponseWriter, r *http.Request) {
 	var req MergePullRequestRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -61,6 +67,9 @@ func (h *Handler) MergePullRequest(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, resp)
 }
 
+// ReassignReviewer handles POST /pullRequest/reassign.
+// It decodes the request body, calls PullRequestService.ReassignReviewer and
+// returns the updated pull request together with the new reviewer ID.
 func (h *Handler) ReassignReviewer(w http.ResponseWriter, r *http.Request) {
 	var req ReassignReviewerRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -92,6 +101,7 @@ func (h *Handler) ReassignReviewer(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, resp)
 }
 
+// toPullRequestDTO maps a domain PullRequest to its HTTP representation.
 func toPullRequestDTO(pr *domain.PullRequest) PullRequestDTO {
 	dto := PullRequestDTO{
 		PullRequestID:     string(pr.ID),

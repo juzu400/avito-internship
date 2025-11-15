@@ -11,6 +11,8 @@ const (
 	PRStatusMerged PullRequestStatus = "MERGED"
 )
 
+// PullRequest represents a simplified pull request with author, status
+// and assigned reviewers.
 type PullRequest struct {
 	ID                PullRequestID
 	Name              string

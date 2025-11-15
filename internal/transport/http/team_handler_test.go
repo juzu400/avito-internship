@@ -47,8 +47,8 @@ func TestAddTeam_Success(t *testing.T) {
 
 	gomock.InOrder(
 		teamRepo.EXPECT().
-			GetByMemberID(gomock.Any(), userID).
-			Return(nil, domain.ErrNotFound),
+			GetTeamsByMemberIDs(gomock.Any(), []domain.UserID{userID}).
+			Return(map[domain.UserID]*domain.Team{}, nil),
 
 		teamRepo.EXPECT().
 			UpsertTeam(gomock.Any(), gomock.AssignableToTypeOf(&domain.Team{})).

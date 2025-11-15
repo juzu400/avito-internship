@@ -97,44 +97,20 @@ func TestPullRequestService_Merge_Idempotent(t *testing.T) {
 	prRepo := mocks.NewMockPullRequestRepository(ctrl)
 	userRepo := mocks.NewMockUserRepository(ctrl)
 
-	now := time.Now().UTC()
 	prID := domain.PullRequestID("pr-1")
 
-	pr := &domain.PullRequest{
-		ID:                prID,
-		Name:              "Test PR",
-		AuthorID:          "author",
-		Status:            domain.PRStatusOpen,
-		AssignedReviewers: []domain.UserID{"u1"},
-		CreatedAt:         now,
+	mergedPR := &domain.PullRequest{
+		ID:       prID,
+		Name:     "Test PR",
+		AuthorID: "author",
+		Status:   domain.PRStatusMerged,
 	}
 
 	prRepo.
 		EXPECT().
-		GetByID(gomock.Any(), prID).
-		Return(pr, nil)
-
-	prRepo.
-		EXPECT().
-		Update(gomock.Any(), gomock.AssignableToTypeOf(&domain.PullRequest{})).
-		DoAndReturn(func(_ context.Context, updated *domain.PullRequest) error {
-			if updated.Status != domain.PRStatusMerged {
-				t.Errorf("expected status %q, got %q", domain.PRStatusMerged, updated.Status)
-			}
-			if updated.MergedAt == nil {
-				t.Errorf("MergedAt must be set")
-			}
-			return nil
-		})
-
-	mergedPR := *pr
-	mergedPR.Status = domain.PRStatusMerged
-	mergedPR.MergedAt = func() *time.Time { x := time.Now().UTC(); return &x }()
-
-	prRepo.
-		EXPECT().
-		GetByID(gomock.Any(), prID).
-		Return(&mergedPR, nil)
+		Merge(gomock.Any(), prID, gomock.Any()).
+		Return(mergedPR, nil).
+		Times(2)
 
 	svc := &PullRequestService{
 		log:   newTestLogger(),
@@ -145,12 +121,16 @@ func TestPullRequestService_Merge_Idempotent(t *testing.T) {
 
 	ctx := context.Background()
 
-	if _, err := svc.Merge(ctx, prID); err != nil {
+	if pr, err := svc.Merge(ctx, prID); err != nil {
 		t.Fatalf("first Merge returned error: %v", err)
+	} else if pr.Status != domain.PRStatusMerged {
+		t.Fatalf("expected status %q, got %q", domain.PRStatusMerged, pr.Status)
 	}
 
-	if _, err := svc.Merge(ctx, prID); err != nil {
+	if pr, err := svc.Merge(ctx, prID); err != nil {
 		t.Fatalf("second Merge returned error: %v", err)
+	} else if pr.Status != domain.PRStatusMerged {
+		t.Fatalf("expected status %q, got %q", domain.PRStatusMerged, pr.Status)
 	}
 }
 
@@ -277,7 +257,7 @@ func TestPullRequestService_Merge_NotFound(t *testing.T) {
 
 	prRepo.
 		EXPECT().
-		GetByID(gomock.Any(), prID).
+		Merge(gomock.Any(), prID, gomock.Any()).
 		Return(nil, domain.ErrNotFound)
 
 	svc := &PullRequestService{
@@ -293,31 +273,19 @@ func TestPullRequestService_Merge_NotFound(t *testing.T) {
 	}
 }
 
-func TestPullRequestService_Merge_UpdateError(t *testing.T) {
+func TestPullRequestService_Merge_RepoError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
 	prRepo := mocks.NewMockPullRequestRepository(ctrl)
 
 	prID := domain.PullRequestID("pr-1")
-	pr := &domain.PullRequest{
-		ID:                prID,
-		Name:              "Test PR",
-		AuthorID:          "author",
-		Status:            domain.PRStatusOpen,
-		AssignedReviewers: []domain.UserID{"u1"},
-		CreatedAt:         time.Now().UTC(),
-	}
+	repoErr := errors.New("db error")
 
 	prRepo.
 		EXPECT().
-		GetByID(gomock.Any(), prID).
-		Return(pr, nil)
-
-	prRepo.
-		EXPECT().
-		Update(gomock.Any(), gomock.Any()).
-		Return(errors.New("db error"))
+		Merge(gomock.Any(), prID, gomock.Any()).
+		Return(nil, repoErr)
 
 	svc := &PullRequestService{
 		log:   newTestLogger(),
@@ -327,8 +295,8 @@ func TestPullRequestService_Merge_UpdateError(t *testing.T) {
 	}
 
 	_, err := svc.Merge(context.Background(), prID)
-	if err == nil {
-		t.Fatal("expected error, got nil")
+	if !errors.Is(err, repoErr) {
+		t.Fatalf("expected %v, got %v", repoErr, err)
 	}
 }
 

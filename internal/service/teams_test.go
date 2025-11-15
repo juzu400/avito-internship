@@ -87,7 +87,7 @@ func TestTeamsService_UpsertTeam_ValidationDuplicateMembers(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	svc, teamRepo := newTestTeamsService(ctrl)
+	svc, _ := newTestTeamsService(ctrl)
 
 	team := &domain.Team{
 		Name: "backend",
@@ -104,10 +104,6 @@ func TestTeamsService_UpsertTeam_ValidationDuplicateMembers(t *testing.T) {
 			},
 		},
 	}
-
-	teamRepo.EXPECT().
-		GetByMemberID(gomock.Any(), domain.UserID("u1")).
-		Return(nil, domain.ErrNotFound)
 
 	err := svc.UpsertTeam(context.Background(), team)
 	if err == nil {
@@ -145,13 +141,9 @@ func TestTeamsService_UpsertTeam_Success(t *testing.T) {
 
 	gomock.InOrder(
 		teamRepo.EXPECT().
-			GetByMemberID(gomock.Any(), userID1).
-			Return(nil, domain.ErrNotFound),
-		teamRepo.EXPECT().
-			GetByMemberID(gomock.Any(), userID2).
-			Return(nil, domain.ErrNotFound),
+			GetTeamsByMemberIDs(gomock.Any(), []domain.UserID{userID1, userID2}).
+			Return(map[domain.UserID]*domain.Team{}, nil),
 
-		// затем уже апсертим команду
 		teamRepo.EXPECT().
 			UpsertTeam(gomock.Any(), team).
 			Return(nil),
@@ -184,10 +176,9 @@ func TestTeamsService_UpsertTeam_RepoErrorPropagated(t *testing.T) {
 	userID := domain.UserID("u1")
 
 	gomock.InOrder(
-		// участник не в другой команде
 		teamRepo.EXPECT().
-			GetByMemberID(gomock.Any(), userID).
-			Return(nil, domain.ErrNotFound),
+			GetTeamsByMemberIDs(gomock.Any(), []domain.UserID{userID}).
+			Return(map[domain.UserID]*domain.Team{}, nil),
 
 		teamRepo.EXPECT().
 			UpsertTeam(gomock.Any(), team).
@@ -337,9 +328,13 @@ func TestTeamsService_UpsertTeam_UserAlreadyInAnotherTeam(t *testing.T) {
 		},
 	}
 
+	userID := domain.UserID("u1")
+
 	teamRepo.EXPECT().
-		GetByMemberID(gomock.Any(), domain.UserID("u1")).
-		Return(&domain.Team{Name: "backend"}, nil)
+		GetTeamsByMemberIDs(gomock.Any(), []domain.UserID{userID}).
+		Return(map[domain.UserID]*domain.Team{
+			userID: {Name: "backend"},
+		}, nil)
 
 	err := svc.UpsertTeam(context.Background(), team)
 	if err == nil {

@@ -13,6 +13,9 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+// Apply runs all SQL migration files found in dir using the provided connection pool.
+// Files are read from the given directory, sorted by name and executed in order.
+// Non-existing directories are treated as "no migrations" and skipped without error.
 func Apply(ctx context.Context, log *slog.Logger, pool *pgxpool.Pool, dir string) error {
 	entries, err := os.ReadDir(dir)
 	if err != nil {

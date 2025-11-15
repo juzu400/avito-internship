@@ -12,6 +12,8 @@ type DB struct {
 	Pool *pgxpool.Pool
 }
 
+// NewPostgresDB creates and initializes a PostgreSQL connection pool using the given DSN.
+// It pings the database to ensure the connection is alive before returning.
 func NewPostgresDB(ctx context.Context, dsn string) (*DB, error) {
 	cfg, err := pgxpool.ParseConfig(dsn)
 	if err != nil {
@@ -36,6 +38,7 @@ func NewPostgresDB(ctx context.Context, dsn string) (*DB, error) {
 	return &DB{Pool: pool}, nil
 }
 
+// Close closes the underlying connection pool if it is not nil.
 func (db *DB) Close() {
 	if db == nil || db.Pool == nil {
 		return

@@ -11,6 +11,9 @@ import (
 	"github.com/juzu400/avito-internship/internal/service"
 )
 
+// SetUserActive handles POST /users/setIsActive.
+// It toggles user's active flag, fetches updated user info and (optionally) their team,
+// and returns the resulting user representation.
 func (h *Handler) SetUserActive(w http.ResponseWriter, r *http.Request) {
 	var req SetUserActiveRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -58,6 +61,9 @@ func (h *Handler) SetUserActive(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, resp)
 }
 
+// GetUserReview handles GET /users/getReview.
+// It expects a "user_id" query parameter, fetches pull requests where the user
+// is assigned as a reviewer, and returns them in a compact form.
 func (h *Handler) GetUserReview(w http.ResponseWriter, r *http.Request) {
 	userID := r.URL.Query().Get("user_id")
 	if userID == "" {

@@ -10,6 +10,9 @@ import (
 	"github.com/juzu400/avito-internship/internal/domain"
 )
 
+// Create creates a new pull request for the given author and automatically
+// assigns reviewers from the author's team. At most two reviewers are assigned.
+// If required fields are missing or business rules are violated, ErrValidation is returned.
 func (s *PullRequestService) Create(
 	ctx context.Context,
 	id domain.PullRequestID,
@@ -66,6 +69,9 @@ func (s *PullRequestService) Create(
 	return pr, nil
 }
 
+// Merge marks a pull request as merged in an idempotent way.
+// If the pull request is already merged, the existing state is returned without error.
+// If the pull request does not exist, domain.ErrNotFound is returned.
 func (s *PullRequestService) Merge(
 	ctx context.Context,
 	id domain.PullRequestID,
@@ -79,42 +85,39 @@ func (s *PullRequestService) Merge(
 		return nil, err
 	}
 
-	s.log.Info("merging pull request", slog.String("pull_request_id", string(id)))
-
-	pr, err := s.prs.GetByID(ctx, id)
-	if err != nil {
-		s.log.Error("GetByID in Merge failed",
-			slog.String("pull_request_id", string(id)),
-			slog.String("error_code", ErrorCode(err)),
-			slog.Any("err", err),
-		)
-		return nil, err
-	}
-
-	if pr.IsMerged() {
-		s.log.Info("pull request already merged",
-			slog.String("pull_request_id", string(id)),
-			slog.String("error_code", ErrCodePullRequestAlreadyMerged),
-		)
-		return pr, nil
-	}
+	s.log.Info("merging pull request",
+		slog.String("pull_request_id", string(id)),
+	)
 
 	now := time.Now().UTC()
-	pr.Status = domain.PRStatusMerged
-	pr.MergedAt = &now
 
-	if err := s.prs.Update(ctx, pr); err != nil {
-		s.log.Error("Update in Merge failed",
+	pr, err := s.prs.Merge(ctx, id, now)
+	if err != nil {
+		s.log.Error("Merge failed",
 			slog.String("pull_request_id", string(id)),
 			slog.String("error_code", ErrorCode(err)),
 			slog.Any("err", err),
 		)
 		return nil, err
+	}
+	if pr.IsMerged() {
+		s.log.Info("pull request merged (idempotent)",
+			slog.String("pull_request_id", string(id)),
+		)
+	} else {
+		s.log.Warn("Merge: pull request not in MERGED status after merge",
+			slog.String("pull_request_id", string(id)),
+			slog.String("status", string(pr.Status)),
+		)
 	}
 
 	return pr, nil
 }
 
+// ReassignReviewer replaces an existing reviewer of a pull request with another
+// candidate from the same team. It skips inactive users, the author and already
+// assigned reviewers. If the pull request is merged, has no such reviewer or
+// there are no suitable candidates, a corresponding domain error is returned.
 func (s *PullRequestService) ReassignReviewer(
 	ctx context.Context,
 	prID domain.PullRequestID,
@@ -226,6 +229,9 @@ func (s *PullRequestService) ReassignReviewer(
 	return pr, &newReviewer, nil
 }
 
+// pickReviewersFromTeam selects up to maxCount active team members as reviewers,
+// excluding the author. If there are fewer candidates than maxCount, all of them
+// are returned. Selection is randomized to avoid always picking the same users.
 func pickReviewersFromTeam(team *domain.Team, authorID domain.UserID, maxCount int) []domain.UserID {
 	candidates := make([]domain.UserID, 0, len(team.Members))
 
@@ -255,6 +261,7 @@ func pickReviewersFromTeam(team *domain.Team, authorID domain.UserID, maxCount i
 	return candidates[:maxCount]
 }
 
+// containsUserID reports whether the given user ID is present in the list.
 func containsUserID(list []domain.UserID, id domain.UserID) bool {
 	for _, v := range list {
 		if v == id {

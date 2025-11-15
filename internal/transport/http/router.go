@@ -15,6 +15,9 @@ type Handler struct {
 	services *service.Services
 }
 
+// NewRouter constructs an HTTP router with all API routes registered.
+// It wires the given logger and services into the Handler and returns
+// a chi-based http.Handler ready to be passed to http.Server.
 func NewRouter(log *slog.Logger, services *service.Services) http.Handler {
 	h := &Handler{
 		log:      log.With(slog.String("layer", "http")),
