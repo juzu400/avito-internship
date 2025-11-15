@@ -11,7 +11,7 @@
 - HTTP-слой: **chi**
 - Работа с БД: **pgx**
 - Логирование: **slog**
-- Тестирование: стандартный `testing`, `httptest`, моки через `gomock`.
+- Тестирование: `testing`, `httptest`, моки через `gomock`, нагрузочное через `grafana k6`.
 - Линтер: **golangci-lint**
 
 ## Запуск
