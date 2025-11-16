@@ -1,3 +1,5 @@
+version: 2.0
+
 run:
   timeout: 5m
   tests: true
@@ -24,11 +26,12 @@ linters:
     - govet
     - staticcheck
     - errcheck
-    - gosimple
-    - unused
     - goconst
-    - gofmt
     - misspell
   disable:
     - dupl
     - lll
+
+formatters:
+  enable:
+    - gofmt
