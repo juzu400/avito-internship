@@ -16,7 +16,7 @@ export default function () {
 
     const res2 = http.get(`${BASE_URL}/pullRequests/stats`);
     check(res2, {
-        '/stats/pullRequests status is 200': (r) => r.status === 200,
+        '/pullRequests/stats status is 200': (r) => r.status === 200,
     });
 
     sleep(0.1);
